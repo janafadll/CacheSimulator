@@ -123,7 +123,6 @@ char* msg[2] = { "Miss", "Hit" };
 
 int main()
 {
-    //srand(time(0)); // Seed for random replacement
 
     unsigned int hit;
     cacheResType r;
