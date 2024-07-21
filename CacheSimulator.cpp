@@ -1,5 +1,5 @@
 
-// Created by Jana Fadl on 20/07/2024.
+// Created by Jana Fadl on 19/07/2024.
 
 #include <iostream>
 #include <iomanip>
@@ -60,114 +60,129 @@ unsigned int memGen6()
     return (addr += 32) % (64 * 4 * 1024);
 }
 
+// Define a struct for cache lines
 struct CacheLine {
-    bool valid;
-    unsigned int tag;
+    bool valid;           // Valid bit
+    unsigned int tag;     // Tag
 };
 
-CacheLine* cacheDM;
-CacheLine* cacheFA;
-int cacheLineCountDM;
-int cacheLineCountFA;
+// Declare pointers to cache arrays and cache line counts
+CacheLine* cacheDM;       // Pointer to direct-mapped cache array
+CacheLine* cacheFA;       // Pointer to fully associative cache array
+int cacheLineCountDM;     // Number of cache lines in direct-mapped cache
+int cacheLineCountFA;     // Number of cache lines in fully associative cache
 
+// Function to initialize direct-mapped cache
 void initializeCacheDM(int cache_size) {
-    cacheLineCountDM = cache_size;
-    cacheDM = new CacheLine[cacheLineCountDM];
-    for (int i = 0; i < cacheLineCountDM; i++) {
-        cacheDM[i].valid = false;
-        cacheDM[i].tag = 0;
+    cacheLineCountDM = cache_size;               // Set the number of cache lines
+    cacheDM = new CacheLine[cacheLineCountDM];   // Allocate memory for the cache lines
+    for (int i = 0; i < cacheLineCountDM; i++) { // Initialize each cache line
+        cacheDM[i].valid = false;                // Set valid bit to false
+        cacheDM[i].tag = 0;                      // Initialize tag to 0
     }
 }
 
+// Function to initialize fully associative cache
 void initializeCacheFA(int cache_size) {
-    cacheLineCountFA = cache_size;
-    cacheFA = new CacheLine[cacheLineCountFA];
-    for (int i = 0; i < cacheLineCountFA; i++) {
-        cacheFA[i].valid = false;
-        cacheFA[i].tag = 0;
+    cacheLineCountFA = cache_size;               // Set the number of cache lines
+    cacheFA = new CacheLine[cacheLineCountFA];   // Allocate memory for the cache lines
+    for (int i = 0; i < cacheLineCountFA; i++) { // Initialize each cache line
+        cacheFA[i].valid = false;                // Set valid bit to false
+        cacheFA[i].tag = 0;                      // Initialize tag to 0
     }
 }
 
 // Direct Mapped Cache Simulator
 cacheResType cacheSimDM(unsigned int addr, int cacheLineSize)
 {
-    int index = (addr / cacheLineSize) % cacheLineCountDM;
-    unsigned int tag = addr / (cacheLineSize * cacheLineCountDM);
-    if (cacheDM[index].valid && cacheDM[index].tag == tag) {
-        return HIT;
+    int index = (addr / cacheLineSize) % cacheLineCountDM;       // Calculate index
+    unsigned int tag = addr / (cacheLineSize * cacheLineCountDM); // Calculate tag
+    if (cacheDM[index].valid && cacheDM[index].tag == tag) {     // Check if valid and tags match
+        return HIT;                                              // Return HIT if match
     } else {
-        cacheDM[index].valid = true;
-        cacheDM[index].tag = tag;
-        return MISS;
+        cacheDM[index].valid = true;                             // Set valid bit to true
+        cacheDM[index].tag = tag;                                // Update tag
+        return MISS;                                             // Return MISS
     }
 }
 
 // Fully Associative Cache Simulator
 cacheResType cacheSimFA(unsigned int addr, int cacheLineSize)
 {
-    unsigned int tag = addr / cacheLineSize;
-    for (int i = 0; i < cacheLineCountFA; i++) {
+    unsigned int tag = addr / cacheLineSize;     // Calculate tag
+    for (int i = 0; i < cacheLineCountFA; i++) { // Search for the tag in the cache
         if (cacheFA[i].valid && cacheFA[i].tag == tag) {
-            return HIT;
+            return HIT;                          // Return HIT if found
         }
     }
-    int replace_index = rand_() % cacheLineCountFA;
-    cacheFA[replace_index].valid = true;
-    cacheFA[replace_index].tag = tag;
-    return MISS;
+    int replace_index = rand_() % cacheLineCountFA; // Choose a random cache line to replace
+    cacheFA[replace_index].valid = true;            // Set valid bit to true
+    cacheFA[replace_index].tag = tag;               // Update tag
+    return MISS;                                    // Return MISS
 }
 
+// Array of result messages
 char* msg[2] = { "Miss", "Hit" };
 
-#define NO_OF_Iterations 1000000 // Change to 1,000,000 for actual tests
+#define NO_OF_Iterations 1000000 // Define the number of iterations
 
 int main()
 {
+    unsigned int hit;      // Variable to count hits
+    cacheResType r;        // Variable to store cache result
+    unsigned int addr;     // Variable to store memory address
 
-    unsigned int hit;
-    cacheResType r;
-    unsigned int addr;
-
+    // Define cache line sizes and memory generators
     int cacheLineSizes[] = { 16, 32, 64, 128 };
     unsigned int(*memGens[])() = { memGen1, memGen2, memGen3, memGen4, memGen5, memGen6 };
 
+    // Loop over each memory generator
     for (int memGenIdx = 0; memGenIdx < 6; memGenIdx++) {
-        for (int cls : cacheLineSizes) {
+        // Loop over each cache line size
+        for (int clsIdx = 0; clsIdx < 4; clsIdx++) {
+            int cls = cacheLineSizes[clsIdx];
             cout << "Direct Mapped Cache Simulator for Cache Line Size: " << cls << " bytes, Memory Generator: memGen" << (memGenIdx + 1) << endl;
-            initializeCacheDM(CACHE_SIZE / cls);
-            hit = 0;
+            initializeCacheDM(CACHE_SIZE / cls); // Initialize the direct-mapped cache
+            hit = 0;                            // Reset hit counter
 
+            // Loop for each iteration
             for (int inst = 0; inst < NO_OF_Iterations; inst++) {
-                addr = memGens[memGenIdx]();
-                r = cacheSimDM(addr, cls);
-                if (r == HIT) hit++;
-              //  if (DBG) {
-             //       cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
-              //  }
+                addr = memGens[memGenIdx]();     // Generate a memory address
+                r = cacheSimDM(addr, cls);       // Simulate cache access
+                if (r == HIT) hit++;             // Increment hit counter if HIT
+                // Debug print statement (commented out)
+                // if (DBG) {
+                //     cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
+                // }
             }
-            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl;
-            delete[] cacheDM;
+            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl; // Print hit ratio
+            delete[] cacheDM; // Deallocate memory
         }
     }
 
+    // Loop over each memory generator for fully associative cache
     for (int memGenIdx = 0; memGenIdx < 6; memGenIdx++) {
-        for (int cls : cacheLineSizes) {
+        // Loop over each cache line size
+        for (int clsIdx = 0; clsIdx < 4; clsIdx++) {
+            int cls = cacheLineSizes[clsIdx];
             cout << "Fully Associative Cache Simulator for Cache Line Size: " << cls << " bytes, Memory Generator: memGen" << (memGenIdx + 1) << endl;
-            initializeCacheFA(CACHE_SIZE / cls);
-            hit = 0;
+            initializeCacheFA(CACHE_SIZE / cls); // Initialize the fully associative cache
+            hit = 0;                            // Reset hit counter
 
+            // Loop for each iteration
             for (int inst = 0; inst < NO_OF_Iterations; inst++) {
-                addr = memGens[memGenIdx]();
-                r = cacheSimFA(addr, cls);
-                if (r == HIT) hit++;
-              //  if (DBG) {
-              //      cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
-               // }
+                addr = memGens[memGenIdx]();     // Generate a memory address
+                r = cacheSimFA(addr, cls);       // Simulate cache access
+                if (r == HIT) hit++;             // Increment hit counter if HIT
+                // Debug print statement (commented out)
+                // if (DBG) {
+                //     cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
+                // }
             }
-            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl;
-            delete[] cacheFA;
+            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl; // Print hit ratio
+            delete[] cacheFA; // Deallocate memory
         }
     }
 
-    return 0;
+    return 0; // Return 0 to indicate successful execution
 }
