@@ -126,63 +126,62 @@ char* msg[2] = { "Miss", "Hit" };
 
 #define NO_OF_Iterations 1000000 // Define the number of iterations
 
-int main()
+// Function to run the cache simulation
+void runSimulation(int iterations, int* cacheLineSizes, int numCacheSizes, unsigned int(**memGens)(), int numMemGens)
 {
     unsigned int hit;      // Variable to count hits
     cacheResType r;        // Variable to store cache result
     unsigned int addr;     // Variable to store memory address
 
-    // Define cache line sizes and memory generators
-    int cacheLineSizes[] = { 16, 32, 64, 128 };
-    unsigned int(*memGens[])() = { memGen1, memGen2, memGen3, memGen4, memGen5, memGen6 };
-
     // Loop over each memory generator
-    for (int memGenIdx = 0; memGenIdx < 6; memGenIdx++) {
+    for (int memGenIdx = 0; memGenIdx < numMemGens; memGenIdx++) {
         // Loop over each cache line size
-        for (int clsIdx = 0; clsIdx < 4; clsIdx++) {
+        for (int clsIdx = 0; clsIdx < numCacheSizes; clsIdx++) {
             int cls = cacheLineSizes[clsIdx];
             cout << "Direct Mapped Cache Simulator for Cache Line Size: " << cls << " bytes, Memory Generator: memGen" << (memGenIdx + 1) << endl;
             initializeCacheDM(CACHE_SIZE / cls); // Initialize the direct-mapped cache
             hit = 0;                            // Reset hit counter
 
             // Loop for each iteration
-            for (int inst = 0; inst < NO_OF_Iterations; inst++) {
+            for (int inst = 0; inst < iterations; inst++) {
                 addr = memGens[memGenIdx]();     // Generate a memory address
                 r = cacheSimDM(addr, cls);       // Simulate cache access
                 if (r == HIT) hit++;             // Increment hit counter if HIT
-                // Debug print statement (commented out)
-                // if (DBG) {
-                //     cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
-                // }
             }
-            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl; // Print hit ratio
+            cout << "Hit ratio = " << (100.0 * hit / iterations) << "%" << endl; // Print hit ratio
             delete[] cacheDM; // Deallocate memory
         }
     }
 
     // Loop over each memory generator for fully associative cache
-    for (int memGenIdx = 0; memGenIdx < 6; memGenIdx++) {
+    for (int memGenIdx = 0; memGenIdx < numMemGens; memGenIdx++) {
         // Loop over each cache line size
-        for (int clsIdx = 0; clsIdx < 4; clsIdx++) {
+        for (int clsIdx = 0; clsIdx < numCacheSizes; clsIdx++) {
             int cls = cacheLineSizes[clsIdx];
             cout << "Fully Associative Cache Simulator for Cache Line Size: " << cls << " bytes, Memory Generator: memGen" << (memGenIdx + 1) << endl;
             initializeCacheFA(CACHE_SIZE / cls); // Initialize the fully associative cache
             hit = 0;                            // Reset hit counter
 
             // Loop for each iteration
-            for (int inst = 0; inst < NO_OF_Iterations; inst++) {
+            for (int inst = 0; inst < iterations; inst++) {
                 addr = memGens[memGenIdx]();     // Generate a memory address
                 r = cacheSimFA(addr, cls);       // Simulate cache access
                 if (r == HIT) hit++;             // Increment hit counter if HIT
-                // Debug print statement (commented out)
-                // if (DBG) {
-                //     cout << "0x" << setfill('0') << setw(8) << hex << addr << " (" << msg[r] << ")\n";
-                // }
             }
-            cout << "Hit ratio = " << (100.0 * hit / NO_OF_Iterations) << "%" << endl; // Print hit ratio
+            cout << "Hit ratio = " << (100.0 * hit / iterations) << "%" << endl; // Print hit ratio
             delete[] cacheFA; // Deallocate memory
         }
     }
+}
+
+int main()
+{
+    // Define cache line sizes and memory generators
+    int cacheLineSizes[] = { 16, 32, 64, 128 };
+    unsigned int(*memGens[])() = { memGen1, memGen2, memGen3, memGen4, memGen5, memGen6 };
+
+    // Run the simulation with different parameters
+    runSimulation(NO_OF_Iterations, cacheLineSizes, 4, memGens, 6);
 
     return 0; // Return 0 to indicate successful execution
 }
